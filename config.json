@@ -6,6 +6,7 @@
     "rsi_period": 14,
     "bb_period": 20,
     "g_channel_length": 10,
+    "trailing_stop_loss_percentage": 1.0,
     "initial_price": 2000,
     "volatility": 0.002,
     "trend": 0,

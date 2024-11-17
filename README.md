@@ -26,6 +26,7 @@ The bot uses a configuration file `src/advanced_config.json` to set various para
 - `risk_percentage`: Percentage of balance to risk per trade.
 - `stop_loss_percentage` and `take_profit_percentage`: Risk management settings.
 - `max_open_trades`: Maximum number of concurrent trades.
+- `trailing_stop_loss_percentage`: Percentage for trailing stop-loss to protect profits.
 
 ## Usage
 
@@ -39,7 +40,7 @@ The bot will continuously fetch market data, generate trading signals, and execu
 ## Features
 
 - **Advanced Strategy Integration**: Combines multiple indicators like EMA, RSI, Bollinger Bands, and G-Channel for robust signal generation.
-- **Risk Management**: Implements stop-loss and take-profit mechanisms to manage risk effectively.
+- **Risk Management**: Implements stop-loss, take-profit, and trailing stop-loss mechanisms to manage risk effectively.
 - **Backtesting Capability**: Allows for historical data backtesting to evaluate strategy performance.
 
 [Edit in StackBlitz next generation editor ⚡️](https://stackblitz.com/~/github.com/Neewview150/AI-Dev-build-trading-bot)

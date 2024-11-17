@@ -14,7 +14,8 @@ CONFIG = {
     "risk_percentage": 1.0,
     "update_interval": 60,
     "ema_period": 20,
-    "g_channel_length": 10
+    "g_channel_length": 10,
+    "trailing_stop_loss_percentage": 1.0
 }
 
 # Configure logging
@@ -72,6 +73,7 @@ class TradingBot:
         self.ema_period = self.config['ema_period']
         self.g_channel_length = self.config['g_channel_length']
         self.position_sizer = PositionSizer(self.config)
+        self.trailing_stop_loss = None
 
     def fetch_price(self) -> float:
         """Fetch real-time price"""
@@ -90,6 +92,13 @@ class TradingBot:
         """Calculate G-Channel signal using price history"""
         return calculateGChannel(self.price_history, self.g_channel_length)
 
+    def apply_trailing_stop_loss(self, current_price: float) -> None:
+        """Apply trailing stop-loss to protect profits."""
+        if self.trailing_stop_loss is not None and current_price < self.trailing_stop_loss:
+            logging.info(f"Trailing stop-loss triggered at {current_price}")
+            self.execute_trade('sell', current_price)
+            self.trailing_stop_loss = None
+
     def execute_trade(self, signal: str, price: float) -> None:
         """Execute trade based on mode"""
         if self.mode == 'simulation':
@@ -100,10 +109,16 @@ class TradingBot:
     def simulate_trade(self, signal: str, price: float) -> None:
         """Simulate trade execution"""
         try:
+            self.exchange = ccxt.binance({
+                'apiKey': self.config['apiKey'],
+                'secret': self.config['apiSecret'],
+                'enableRateLimit': True,
+            })
             position_size = self.position_sizer.calculate_position_size(
                 self.position['quote_amount'], price, signal
             )
             if signal == 'buy' and self.position['base_amount'] == 0:
+                self.trailing_stop_loss = price * (1 - self.config['trailing_stop_loss_percentage'] / 100)
                 cost = position_size * price
                 if cost <= self.position['quote_amount']:
                     self.position['base_amount'] = position_size
@@ -112,6 +127,7 @@ class TradingBot:
                     
             elif signal == 'sell' and self.position['base_amount'] > 0:
                 gained = self.position['base_amount'] * price
+                self.trailing_stop_loss = None
                 self.position['quote_amount'] += gained
                 self.position['base_amount'] = 0
                 self.log_trade('sell', price, self.position['base_amount'])
@@ -183,6 +199,7 @@ class TradingBot:
                         logging.info(f"Sell signal detected above EMA: {price} > {ema}")
                         self.execute_trade('sell', price)
 
+                self.apply_trailing_stop_loss(price)
                 current_portfolio = self.calculate_portfolio_value(price)
                 self.portfolio_value_history.append(current_portfolio)
                 pnl_percentage = ((current_portfolio - initial_portfolio) / initial_portfolio) * 100
