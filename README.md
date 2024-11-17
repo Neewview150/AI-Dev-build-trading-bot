@@ -36,6 +36,19 @@ python -m src.advanced_trading_bot
 
 The bot will continuously fetch market data, generate trading signals, and execute trades based on the configured strategy.
 
+## Simple Backtest
+
+To run the simple backtest script, follow these steps:
+
+1. Ensure you have a CSV file named `historical_data.csv` containing the historical price data. This file should be placed in the root directory of the project.
+
+2. Execute the simple backtest script using the following command:
+   ```bash
+   python simple_backtest.py
+   ```
+
+3. The script will output the final portfolio value and the total percentage profit or loss at the end of the backtest.
+
 ## Features
 
 - **Advanced Strategy Integration**: Combines multiple indicators like EMA, RSI, Bollinger Bands, and G-Channel for robust signal generation.
