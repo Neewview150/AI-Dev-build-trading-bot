@@ -4,7 +4,8 @@ import logging
 from datetime import datetime
 import ccxt
 from typing import Dict, List, Tuple
-
+import ccxt
+import numpy as np
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -31,6 +32,7 @@ class TradingBot:
         self.position = {'base_amount': 0, 'quote_amount': 10}  # Starting with 10 USDT
         self.trade_history = []
         self.price_history = []
+        self.portfolio_value_history = []
         self.price_fetcher = PoloniexPriceFetcher()
         self.ema_period = 200
         self.g_channel_length = 10
@@ -143,7 +145,19 @@ class TradingBot:
         """Calculate total portfolio value in USDT"""
         return self.position['quote_amount'] + (self.position['base_amount'] * current_price)
 
-    def run(self) -> None:
+    def calculate_max_drawdown(self) -> float:
+        """Calculate the maximum drawdown from the portfolio value history"""
+        if not self.portfolio_value_history:
+            return 0.0
+        peak = self.portfolio_value_history[0]
+        max_drawdown = 0.0
+        for value in self.portfolio_value_history:
+            if value > peak:
+                peak = value
+            drawdown = (peak - value) / peak
+            if drawdown > max_drawdown:
+                max_drawdown = drawdown
+        return max_drawdown * 100
         """Main trading loop"""
         logging.info("Starting trading bot with real-time data...")
         initial_portfolio = self.calculate_portfolio_value(self.price_fetcher.get_price())
@@ -163,12 +177,15 @@ class TradingBot:
                         self.execute_trade('sell', price)
 
                 current_portfolio = self.calculate_portfolio_value(price)
+                self.portfolio_value_history.append(current_portfolio)
                 pnl_percentage = ((current_portfolio - initial_portfolio) / initial_portfolio) * 100
+                max_drawdown = self.calculate_max_drawdown()
 
                 logging.info(
                     f"Price: ${price:.2f} | Signal: {signal} | "
                     f"Portfolio: ${current_portfolio:.2f} | "
-                    f"PnL: {pnl_percentage:+.2f}%"
+                    f"PnL: {pnl_percentage:+.2f}% | "
+                    f"Max Drawdown: {max_drawdown:.2f}%"
                 )
                 
                 time.sleep(1)  # Update every second in simulation
