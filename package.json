@@ -1,0 +1,10 @@
+{
+  "name": "advanced-trading-bot",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "start": "python -m src.main",
+    "backtest": "python -m src.backtest",
+    "optimize": "python -m src.optimizer"
+  }
+}
