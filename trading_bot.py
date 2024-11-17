@@ -3,9 +3,12 @@ import time
 import logging
 from datetime import datetime
 import ccxt
-from typing import Dict, List, Tuple
-import ccxt
 import numpy as np
+from typing import Dict, List, Tuple
+from src.config import load_config
+from src.indicators import calculateEMA, calculateGChannel
+from src.risk_management import PositionSizer
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -15,38 +18,27 @@ logging.basicConfig(
     ]
 )
 
-class PoloniexPriceFetcher:
-    def __init__(self):
-        self.exchange = ccxt.poloniex({
-            'enableRateLimit': True,
-        })
-
-    def get_price(self) -> float:
-        """Fetch real-time price from Poloniex"""
-        ticker = self.exchange.fetch_ticker('ETH/USDT')
-        return ticker['last']
-
 class TradingBot:
     def __init__(self, mode='simulation'):
+        self.config = load_config()
         self.mode = mode
-        self.position = {'base_amount': 0, 'quote_amount': 10}  # Starting with 10 USDT
+        self.position = {'base_amount': 0, 'quote_amount': self.config['initial_balance']}
         self.trade_history = []
         self.price_history = []
         self.portfolio_value_history = []
-        self.price_fetcher = PoloniexPriceFetcher()
-        self.ema_period = 200
-        self.g_channel_length = 10
-        self.trade_amount = 2
-        if self.mode == 'real':
-            self.exchange = ccxt.poloniex({
-                'apiKey': 'YOUR_API_KEY',
-                'secret': 'YOUR_API_SECRET',
-                'enableRateLimit': True,
-            })
+        self.price_fetcher = ccxt.binance({
+            'apiKey': self.config['apiKey'],
+            'secret': self.config['apiSecret'],
+            'enableRateLimit': True,
+        })
+        self.ema_period = self.config['ema_period']
+        self.g_channel_length = self.config['g_channel_length']
+        self.position_sizer = PositionSizer(self.config)
 
     def fetch_price(self) -> float:
         """Fetch real-time price"""
-        price = self.price_fetcher.get_price()
+        ticker = self.price_fetcher.fetch_ticker(self.config['symbol'])
+        price = ticker['last']
         self.price_history.append(price)
         if len(self.price_history) > self.ema_period:
             self.price_history = self.price_history[-self.ema_period:]
@@ -54,39 +46,11 @@ class TradingBot:
 
     def calculate_ema(self) -> float:
         """Calculate EMA using price history"""
-        if len(self.price_history) < 2:
-            return self.price_history[0] if self.price_history else None
-            
-        multiplier = 2 / (self.ema_period + 1)
-        ema = self.price_history[0]
-        
-        for price in self.price_history[1:]:
-            ema = (price - ema) * multiplier + ema
-            
-        return ema
+        return calculateEMA(self.price_history, self.ema_period)
 
     def calculate_g_channel(self) -> Tuple[str, float]:
         """Calculate G-Channel signal using price history"""
-        if len(self.price_history) < self.g_channel_length:
-            return 'hold', None
-
-        prices = self.price_history[-self.g_channel_length:]
-        a = prices[0]
-        b = prices[0]
-        
-        for price in prices[1:]:
-            a = max(price, a) - (a - b) / self.g_channel_length
-            b = min(price, b) + (a - b) / self.g_channel_length
-
-        avg = (a + b) / 2
-        current_price = prices[-1]
-        prev_price = prices[-2]
-
-        if b < prev_price and b > current_price:
-            return 'buy', avg
-        elif a > prev_price and a < current_price:
-            return 'sell', avg
-        return 'hold', avg
+        return calculateGChannel(self.price_history, self.g_channel_length)
 
     def execute_trade(self, signal: str, price: float) -> None:
         """Execute trade based on mode"""
@@ -98,14 +62,15 @@ class TradingBot:
     def simulate_trade(self, signal: str, price: float) -> None:
         """Simulate trade execution"""
         try:
+            position_size = self.position_sizer.calculate_position_size(
+                self.position['quote_amount'], price, signal
+            )
             if signal == 'buy' and self.position['base_amount'] == 0:
-                amount = self.trade_amount / price
-                cost = amount * price
-                
+                cost = position_size * price
                 if cost <= self.position['quote_amount']:
-                    self.position['base_amount'] = amount
+                    self.position['base_amount'] = position_size
                     self.position['quote_amount'] -= cost
-                    self.log_trade('buy', price, amount)
+                    self.log_trade('buy', price, position_size)
                     
             elif signal == 'sell' and self.position['base_amount'] > 0:
                 gained = self.position['base_amount'] * price
@@ -119,12 +84,15 @@ class TradingBot:
     def real_trade(self, signal: str, price: float) -> None:
         """Execute real trade using ccxt"""
         try:
+            position_size = self.position_sizer.calculate_position_size(
+                self.position['quote_amount'], price, signal
+            )
             if signal == 'buy':
-                order = self.exchange.create_market_buy_order('ETH/USDT', self.trade_amount)
-                self.log_trade('buy', price, self.trade_amount)
+                order = self.exchange.create_market_buy_order(self.config['symbol'], position_size)
+                self.log_trade('buy', price, position_size)
             elif signal == 'sell':
-                order = self.exchange.create_market_sell_order('ETH/USDT', self.trade_amount)
-                self.log_trade('sell', price, self.trade_amount)
+                order = self.exchange.create_market_sell_order(self.config['symbol'], position_size)
+                self.log_trade('sell', price, position_size)
         except Exception as e:
             logging.error(f"Error executing real trade: {e}")
 
@@ -158,9 +126,10 @@ class TradingBot:
             if drawdown > max_drawdown:
                 max_drawdown = drawdown
         return max_drawdown * 100
+    def run(self) -> None:
         """Main trading loop"""
         logging.info("Starting trading bot with real-time data...")
-        initial_portfolio = self.calculate_portfolio_value(self.price_fetcher.get_price())
+        initial_portfolio = self.calculate_portfolio_value(self.fetch_price())
         
         while True:
             try:
@@ -188,11 +157,11 @@ class TradingBot:
                     f"Max Drawdown: {max_drawdown:.2f}%"
                 )
                 
-                time.sleep(1)  # Update every second in simulation
+                time.sleep(self.config['update_interval'])  # Update based on config interval
                 
             except Exception as e:
                 logging.error(f"Error in main loop: {e}")
-                time.sleep(1)
+                time.sleep(self.config['update_interval'])
 
 if __name__ == "__main__":
     bot = TradingBot(mode='simulation')  # Change to 'real' for real trading

@@ -12,5 +12,7 @@
     "history_size": 100,
     "min_confidence": 0.7,
     "rsi_oversold": 30,
-    "rsi_overbought": 70
+    "rsi_overbought": 70,
+    "stop_loss_percentage": 2.0,
+    "take_profit_percentage": 5.0
 }
