@@ -1,9 +1,12 @@
 import pandas as pd
 import numpy as np
+from datetime import datetime, timedelta
 
-def load_historical_data(file_path: str) -> pd.DataFrame:
-    """Load historical price data from a CSV file."""
-    return pd.read_csv(file_path, parse_dates=['timestamp'])
+def generate_mock_data(start_date: str, end_date: str, interval: str = '5T') -> pd.DataFrame:
+    """Generate mock data for AUD/USD pair."""
+    date_range = pd.date_range(start=start_date, end=end_date, freq=interval)
+    prices = np.random.lognormal(mean=0, sigma=0.01, size=len(date_range)) * 0.75 + 0.75
+    return pd.DataFrame({'timestamp': date_range, 'close': prices})
 
 def simple_moving_average_strategy(data: pd.DataFrame, short_window: int = 40, long_window: int = 100):
     """Simple moving average crossover strategy."""
@@ -34,9 +37,25 @@ def backtest_strategy(data: pd.DataFrame, initial_balance: float = 10000.0):
 
     final_value = portfolio_value[-1]
     pnl_percentage = ((final_value - initial_balance) / initial_balance) * 100
+    max_drawdown = calculate_max_drawdown(portfolio_value)
     print(f"Final Portfolio Value: ${final_value:.2f}")
     print(f"Total PnL: {pnl_percentage:.2f}%")
+    print(f"Max Drawdown: {max_drawdown:.2f}%")
+
+def calculate_max_drawdown(portfolio_values: list) -> float:
+    """Calculate the maximum drawdown from the portfolio value history."""
+    peak = portfolio_values[0]
+    max_drawdown = 0.0
+    for value in portfolio_values:
+        if value > peak:
+            peak = value
+        drawdown = (peak - value) / peak
+        if drawdown > max_drawdown:
+            max_drawdown = drawdown
+    return max_drawdown * 100
 
 if __name__ == "__main__":
-    historical_data = load_historical_data('historical_data.csv')
-    backtest_strategy(historical_data)
+    start_date = '2022-01-01'
+    end_date = '2022-12-31'
+    mock_data = generate_mock_data(start_date, end_date)
+    backtest_strategy(mock_data)
