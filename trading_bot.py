@@ -1,13 +1,21 @@
-import json
 import time
 import logging
 from datetime import datetime
 import ccxt
 import numpy as np
 from typing import Dict, List, Tuple
-from src.config import load_config
-from src.indicators import calculateEMA, calculateGChannel
-from src.risk_management import PositionSizer
+
+# Configuration settings
+CONFIG = {
+    "apiKey": "your_api_key_here",
+    "apiSecret": "your_api_secret_here",
+    "symbol": "BTC/USDT",
+    "initial_balance": 10000,
+    "risk_percentage": 1.0,
+    "update_interval": 60,
+    "ema_period": 20,
+    "g_channel_length": 10
+}
 
 # Configure logging
 logging.basicConfig(
@@ -18,9 +26,39 @@ logging.basicConfig(
     ]
 )
 
+def calculateEMA(prices: List[float], period: int) -> float:
+    """Calculate Exponential Moving Average."""
+    if len(prices) < period:
+        return None
+    weights = np.exp(np.linspace(-1., 0., period))
+    weights /= weights.sum()
+    a = np.convolve(prices, weights, mode='full')[:len(prices)]
+    a[:period] = a[period]
+    return a[-1]
+
+def calculateGChannel(prices: List[float], length: int) -> Tuple[str, float]:
+    """Calculate G-Channel signal."""
+    if len(prices) < length:
+        return 'hold', 0.0
+    avg = np.mean(prices[-length:])
+    if prices[-1] > avg:
+        return 'sell', avg
+    elif prices[-1] < avg:
+        return 'buy', avg
+    return 'hold', avg
+
+class PositionSizer:
+    def __init__(self, config: Dict):
+        self.risk_percentage = config['risk_percentage']
+
+    def calculate_position_size(self, balance: float, price: float, signal: str) -> float:
+        """Calculate position size based on risk percentage."""
+        risk_amount = balance * (self.risk_percentage / 100)
+        return risk_amount / price
+
 class TradingBot:
     def __init__(self, mode='simulation'):
-        self.config = load_config()
+        self.config = CONFIG
         self.mode = mode
         self.position = {'base_amount': 0, 'quote_amount': self.config['initial_balance']}
         self.trade_history = []
