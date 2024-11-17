@@ -37,8 +37,12 @@ class TradingBot:
 
     def fetch_price(self) -> float:
         """Fetch real-time price"""
-        ticker = self.price_fetcher.fetch_ticker(self.config['symbol'])
-        price = ticker['last']
+        try:
+            ticker = self.price_fetcher.fetch_ticker(self.config['symbol'])
+            price = ticker['last']
+        except ccxt.RateLimitExceeded as e:
+            logging.warning(f"Rate limit exceeded for symbol {self.config['symbol']} at {datetime.now().isoformat()}: {e}")
+            raise
         self.price_history.append(price)
         if len(self.price_history) > self.ema_period:
             self.price_history = self.price_history[-self.ema_period:]
