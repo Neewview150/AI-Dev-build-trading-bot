@@ -1,4 +1,8 @@
 {
+    "apiKey": "your_api_key_here",
+    "apiSecret": "your_api_secret_here",
+    "symbol": "BTC/USDT",
+    "timeframe": "1h",
     "initial_balance": 10000,
     "risk_percentage": 1.0,
     "update_interval": 60,
@@ -14,5 +18,8 @@
     "rsi_oversold": 30,
     "rsi_overbought": 70,
     "stop_loss_percentage": 2.0,
-    "take_profit_percentage": 5.0
+    "take_profit_percentage": 5.0,
+    "max_open_trades": 5,
+    "trade_amount": 1,
+    "logging_level": "INFO"
 }
