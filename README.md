@@ -36,18 +36,20 @@ python -m src.advanced_trading_bot
 
 The bot will continuously fetch market data, generate trading signals, and execute trades based on the configured strategy.
 
-## Simple Backtest
+## Backtest Strategy
 
-To run the simple backtest script, follow these steps:
+To run the `backtest_strategy.py` script, which performs a backtest using mock data, follow these steps:
 
-1. Ensure you have a CSV file named `historical_data.csv` containing the historical price data. This file should be placed in the root directory of the project.
+1. Ensure all dependencies are installed as per the installation instructions.
 
-2. Execute the simple backtest script using the following command:
+2. Execute the backtest strategy script using the following command:
    ```bash
-   python simple_backtest.py
+   python backtest_strategy.py
    ```
 
-3. The script will output the final portfolio value and the total percentage profit or loss at the end of the backtest.
+3. The script will generate mock data, run a backtest, and output the final portfolio value, total return, and maximum drawdown.
+
+4. Configuration options can be adjusted in the `config.json` file to modify the initial balance, risk percentage, and other parameters.
 
 ## Features
 
