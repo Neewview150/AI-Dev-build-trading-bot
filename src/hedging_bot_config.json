@@ -1,0 +1,22 @@
+{
+    "apiKey": "your_fbs_api_key_here",
+    "apiSecret": "your_fbs_api_secret_here",
+    "trading_pairs": ["XAU/USD", "EUR/USD"],
+    "risk_management": {
+        "daily_loss_limit_percentage": 4.0,
+        "overall_loss_limit_percentage": 10.0
+    },
+    "delta_gamma": {
+        "rolling_window_size": 30
+    },
+    "volatility_forecasting": {
+        "model": "GARCH",
+        "parameters": {
+            "p": 1,
+            "q": 1
+        }
+    },
+    "dynamic_rebalancing": {
+        "update_interval": 1  # in seconds
+    }
+}
