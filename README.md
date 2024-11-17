@@ -72,3 +72,32 @@ python high_frequency_hedging_bot.py
 ```
 
 The bot will continuously fetch market data, calculate delta and gamma, forecast volatility, and execute trades based on the configured strategy.
+
+## High-Frequency Hedging Bot
+
+The High-Frequency Hedging Bot is designed to execute trades at high frequency, capitalizing on price fluctuations in gold and EUR/USD pairs. It adheres to prop firm rules by enforcing strict loss limits and dynamically rebalancing the portfolio based on delta and gamma calculations.
+
+### Features
+
+- **Delta and Gamma Monitoring**: Continuously calculates delta and gamma to dynamically rebalance the portfolio.
+- **Volatility Forecasting**: Utilizes GARCH models to predict changes in volatility.
+- **Smart Order Execution**: Implements smart order routing and order splitting to minimize market impact.
+- **Risk Management**: Enforces daily and overall loss limits as per prop firm rules.
+
+### Configuration
+
+The bot uses a configuration file `src/hedging_bot_config.json` to set various parameters:
+- `apiKey` and `apiSecret`: Your API credentials for accessing the FBS broker.
+- `trading_pairs`: The pairs to trade, e.g., "XAU/USD" and "EUR/USD".
+- `risk_management`: Settings for daily and overall loss limits.
+- `delta_gamma`: Parameters for delta and gamma calculations.
+- `volatility_forecasting`: Parameters for the GARCH model.
+
+### Usage
+
+To run the high-frequency hedging bot, execute the following command:
+```bash
+python high_frequency_hedging_bot.py
+```
+
+The bot will continuously fetch market data, calculate delta and gamma, forecast volatility, and execute trades based on the configured strategy.
