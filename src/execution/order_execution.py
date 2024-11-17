@@ -53,6 +53,27 @@ class OrderExecution:
         if remainder > 0:
             await self.place_order(order_type, remainder, price)
 
+    async def modify_order(self, order_id: str, amount: float, price: float = None) -> None:
+        """Modify an existing order."""
+        try:
+            order = await self.exchange.fetch_order(order_id, self.symbol)
+            if order['status'] == 'open':
+                await self.exchange.cancel_order(order_id, self.symbol)
+                await self.place_order(order['side'], amount, price)
+                self.logger.info(f"Order modified: {order_id}")
+            else:
+                self.logger.warning(f"Cannot modify order {order_id} as it is not open.")
+        except Exception as e:
+            self.logger.error(f"Error modifying order: {e}")
+
+    async def cancel_order(self, order_id: str) -> None:
+        """Cancel an existing order."""
+        try:
+            await self.exchange.cancel_order(order_id, self.symbol)
+            self.logger.info(f"Order canceled: {order_id}")
+        except Exception as e:
+            self.logger.error(f"Error canceling order: {e}")
+
     async def close(self):
         """Close the exchange connection."""
         await self.exchange.close()
@@ -69,6 +90,10 @@ if __name__ == "__main__":
 
     async def main():
         await order_execution.execute_order('buy', 250, 1800)
+        # Example of modifying an order
+        await order_execution.modify_order('order_id_example', 150, 1750)
+        # Example of canceling an order
+        await order_execution.cancel_order('order_id_example')
         await order_execution.close()
 
     asyncio.run(main())

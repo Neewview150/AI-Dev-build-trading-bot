@@ -33,7 +33,8 @@ class DeltaGammaCalculator:
         covariance_matrix = np.cov(gold_returns, eurusd_returns)
         delta = covariance_matrix[0, 1] / covariance_matrix[1, 1]
 
-        # Calculate gamma as the rate of change of delta
-        gamma = np.gradient(delta)
+        # Calculate gamma as the rate of change of delta over the rolling window
+        delta_changes = np.diff(gold_returns) / np.diff(eurusd_returns)
+        gamma = np.mean(delta_changes) if len(delta_changes) > 0 else 0.0
 
         return delta, gamma
