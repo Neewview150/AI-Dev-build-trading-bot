@@ -26,7 +26,8 @@ class PoloniexPriceFetcher:
         return ticker['last']
 
 class TradingBot:
-    def __init__(self):
+    def __init__(self, mode='simulation'):
+        self.mode = mode
         self.position = {'base_amount': 0, 'quote_amount': 10}  # Starting with 10 USDT
         self.trade_history = []
         self.price_history = []
@@ -34,6 +35,12 @@ class TradingBot:
         self.ema_period = 200
         self.g_channel_length = 10
         self.trade_amount = 2
+        if self.mode == 'real':
+            self.exchange = ccxt.poloniex({
+                'apiKey': 'YOUR_API_KEY',
+                'secret': 'YOUR_API_SECRET',
+                'enableRateLimit': True,
+            })
 
     def fetch_price(self) -> float:
         """Fetch real-time price"""
@@ -79,6 +86,13 @@ class TradingBot:
             return 'sell', avg
         return 'hold', avg
 
+    def execute_trade(self, signal: str, price: float) -> None:
+        """Execute trade based on mode"""
+        if self.mode == 'simulation':
+            self.simulate_trade(signal, price)
+        elif self.mode == 'real':
+            self.real_trade(signal, price)
+
     def simulate_trade(self, signal: str, price: float) -> None:
         """Simulate trade execution"""
         try:
@@ -99,6 +113,18 @@ class TradingBot:
                 
         except Exception as e:
             logging.error(f"Error simulating trade: {e}")
+
+    def real_trade(self, signal: str, price: float) -> None:
+        """Execute real trade using ccxt"""
+        try:
+            if signal == 'buy':
+                order = self.exchange.create_market_buy_order('ETH/USDT', self.trade_amount)
+                self.log_trade('buy', price, self.trade_amount)
+            elif signal == 'sell':
+                order = self.exchange.create_market_sell_order('ETH/USDT', self.trade_amount)
+                self.log_trade('sell', price, self.trade_amount)
+        except Exception as e:
+            logging.error(f"Error executing real trade: {e}")
 
     def log_trade(self, trade_type: str, price: float, amount: float) -> None:
         """Log trade to history"""
@@ -131,10 +157,10 @@ class TradingBot:
                 if ema is not None:
                     if signal == 'buy' and price < ema:
                         logging.info(f"Buy signal detected below EMA: {price} < {ema}")
-                        self.simulate_trade('buy', price)
+                        self.execute_trade('buy', price)
                     elif signal == 'sell' and price > ema:
                         logging.info(f"Sell signal detected above EMA: {price} > {ema}")
-                        self.simulate_trade('sell', price)
+                        self.execute_trade('sell', price)
 
                 current_portfolio = self.calculate_portfolio_value(price)
                 pnl_percentage = ((current_portfolio - initial_portfolio) / initial_portfolio) * 100
@@ -152,5 +178,5 @@ class TradingBot:
                 time.sleep(1)
 
 if __name__ == "__main__":
-    bot = TradingBot()
+    bot = TradingBot(mode='simulation')  # Change to 'real' for real trading
     bot.run()
