@@ -3,7 +3,7 @@ import logging
 import pandas as pd
 from datetime import datetime
 from typing import Dict, List
-from src.core.engine import TradingEngine
+from propfirm import PropFirmStrategy
 from src.config import load_config
 from src.utils.logger import setup_logger
 
@@ -11,7 +11,7 @@ class Backtester:
     def __init__(self, historical_data: pd.DataFrame, config: Dict):
         self.historical_data = historical_data
         self.config = config
-        self.engine = TradingEngine(config)
+        self.strategy = PropFirmStrategy(config)
         self.logger = setup_logger()
         self.portfolio_value_history = []
 
@@ -22,10 +22,12 @@ class Backtester:
 
         for index, row in self.historical_data.iterrows():
             current_price = row['close']
-            self.engine.price_feed.price_history.append(row.to_dict())
-            self.engine.update()
+            signals = self.strategy.generate_signals(self.historical_data.iloc[:index+1])
+            if signals.should_trade:
+                # Execute trades based on the signals
+                self.execute_trades(signals, current_price)
 
-            current_portfolio_value = self.engine.portfolio.get_total_value(current_price)
+            current_portfolio_value = self.strategy.portfolio.get_total_value(current_price)
             self.portfolio_value_history.append(current_portfolio_value)
 
         self._log_results()
@@ -52,6 +54,10 @@ class Backtester:
                 max_drawdown = drawdown
 
         return max_drawdown
+
+    def execute_trades(self, signals, current_price):
+        # Implement trade execution logic based on the strategy signals
+        pass
 
 def load_historical_data(file_path: str) -> pd.DataFrame:
     return pd.read_csv(file_path, parse_dates=['timestamp'])
