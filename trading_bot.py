@@ -2,7 +2,7 @@ import json
 import time
 import logging
 from datetime import datetime
-import random
+import ccxt
 from typing import Dict, List, Tuple
 
 # Configure logging
@@ -14,30 +14,30 @@ logging.basicConfig(
     ]
 )
 
-class MockPriceGenerator:
-    def __init__(self, base_price=2000, volatility=0.002):
-        self.current_price = base_price
-        self.volatility = volatility
+class PoloniexPriceFetcher:
+    def __init__(self):
+        self.exchange = ccxt.poloniex({
+            'enableRateLimit': True,
+        })
 
     def get_price(self) -> float:
-        """Generate a realistic price movement"""
-        change = random.normalvariate(0, self.volatility)
-        self.current_price *= (1 + change)
-        return round(self.current_price, 2)
+        """Fetch real-time price from Poloniex"""
+        ticker = self.exchange.fetch_ticker('ETH/USDT')
+        return ticker['last']
 
 class TradingBot:
     def __init__(self):
-        self.position = {'base_amount': 0, 'quote_amount': 1000}  # Starting with 1000 USDT
+        self.position = {'base_amount': 0, 'quote_amount': 10}  # Starting with 10 USDT
         self.trade_history = []
         self.price_history = []
-        self.price_generator = MockPriceGenerator()
-        self.ema_period = 20
+        self.price_fetcher = PoloniexPriceFetcher()
+        self.ema_period = 200
         self.g_channel_length = 10
-        self.risk_percentage = 1.0
+        self.trade_amount = 2
 
     def fetch_price(self) -> float:
-        """Fetch simulated price"""
-        price = self.price_generator.get_price()
+        """Fetch real-time price"""
+        price = self.price_fetcher.get_price()
         self.price_history.append(price)
         if len(self.price_history) > self.ema_period:
             self.price_history = self.price_history[-self.ema_period:]
@@ -83,7 +83,7 @@ class TradingBot:
         """Simulate trade execution"""
         try:
             if signal == 'buy' and self.position['base_amount'] == 0:
-                amount = (self.position['quote_amount'] * self.risk_percentage / 100) / price
+                amount = self.trade_amount / price
                 cost = amount * price
                 
                 if cost <= self.position['quote_amount']:
@@ -119,8 +119,8 @@ class TradingBot:
 
     def run(self) -> None:
         """Main trading loop"""
-        logging.info("Starting trading bot simulation...")
-        initial_portfolio = self.calculate_portfolio_value(self.price_generator.current_price)
+        logging.info("Starting trading bot with real-time data...")
+        initial_portfolio = self.calculate_portfolio_value(self.price_fetcher.get_price())
         
         while True:
             try:
@@ -130,8 +130,10 @@ class TradingBot:
 
                 if ema is not None:
                     if signal == 'buy' and price < ema:
+                        logging.info(f"Buy signal detected below EMA: {price} < {ema}")
                         self.simulate_trade('buy', price)
                     elif signal == 'sell' and price > ema:
+                        logging.info(f"Sell signal detected above EMA: {price} > {ema}")
                         self.simulate_trade('sell', price)
 
                 current_portfolio = self.calculate_portfolio_value(price)
