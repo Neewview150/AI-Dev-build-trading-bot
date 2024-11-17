@@ -5,6 +5,24 @@ from typing import Optional
 def setup_logger() -> logging.Logger:
     logger = logging.getLogger('TradingBot')
     logger.setLevel(logging.INFO)
+
+def setup_chat_logger() -> logging.Logger:
+    logger = logging.getLogger('ChatHandler')
+    logger.setLevel(logging.INFO)
+    
+    formatter = logging.Formatter(
+        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    console_handler = logging.StreamHandler(sys.stdout)
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+    
+    return logger
+
+def setup_chat_logger() -> logging.Logger:
+    logger = logging.getLogger('ChatHandler')
+    logger.setLevel(logging.INFO)
     
     formatter = logging.Formatter(
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'

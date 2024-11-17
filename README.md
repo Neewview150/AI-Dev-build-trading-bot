@@ -45,6 +45,25 @@ The bot will continuously fetch market data, generate trading signals, and execu
 
 [Edit in StackBlitz next generation editor ⚡️](https://stackblitz.com/~/github.com/Neewview150/AI-Dev-build-trading-bot)
 
+## Chat Feature
+
+The chat feature allows real-time communication using WebSockets. It is designed to facilitate interaction between users and the trading bot.
+
+### Configuration
+
+The chat feature uses a configuration file `src/chat_config.json` to set various parameters:
+- `server_address`: The WebSocket server address.
+- `port`: The port on which the chat server will run.
+
+### Usage
+
+To run the chat server, execute the following command:
+```bash
+python -m src.new_chat
+```
+
+To interact with the chat feature, connect to the WebSocket server using a WebSocket client and send messages. The server will log incoming and outgoing messages.
+
 ## High-Frequency Hedging Bot
 
 The High-Frequency Hedging Bot is designed to execute trades at high frequency, capitalizing on price fluctuations in gold and EUR/USD pairs. It adheres to prop firm rules by enforcing strict loss limits and dynamically rebalancing the portfolio based on delta and gamma calculations.
