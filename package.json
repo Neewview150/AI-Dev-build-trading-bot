@@ -5,6 +5,7 @@
   "scripts": {
     "start": "python -m src.main",
     "backtest": "python -m src.backtest",
-    "optimize": "python -m src.optimizer"
+    "optimize": "python -m src.optimizer",
+    "propfirm-backtest": "python -m src.propfirm_backtest"
   }
 }

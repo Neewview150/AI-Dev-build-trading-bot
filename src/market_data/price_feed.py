@@ -8,7 +8,8 @@ class PriceFeed:
         self.base_price = config.get('initial_price', 2000)
         self.volatility = config.get('volatility', 0.002)
         self.trend = config.get('trend', 0)
-        self.history_size = config.get('history_size', 100)
+        # Calculate the number of 5-minute intervals in a year
+        self.history_size = config.get('history_size', 525600 // 5)
         self.price_history = []
         self._initialize_history()
 
@@ -18,7 +19,7 @@ class PriceFeed:
             current_price = self._generate_price(current_price)
             self.price_history.append({
                 'timestamp': datetime.now() - timedelta(
-                    minutes=self.history_size - len(self.price_history)
+                    minutes=(self.history_size - len(self.price_history)) * 5
                 ),
                 'open': current_price,
                 'high': current_price * (1 + random.uniform(0, self.volatility)),

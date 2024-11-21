@@ -36,6 +36,21 @@ python -m src.advanced_trading_bot
 
 The bot will continuously fetch market data, generate trading signals, and execute trades based on the configured strategy.
 
+## Backtest Strategy
+
+To run the `backtest_strategy.py` script, which performs a backtest using mock data, follow these steps:
+
+1. Ensure all dependencies are installed as per the installation instructions.
+
+2. Execute the backtest strategy script using the following command:
+   ```bash
+   python backtest_strategy.py
+   ```
+
+3. The script will generate mock data, run a backtest, and output the final portfolio value, total return, and maximum drawdown.
+
+4. Configuration options can be adjusted in the `config.json` file to modify the initial balance, risk percentage, and other parameters.
+
 ## Features
 
 - **Advanced Strategy Integration**: Combines multiple indicators like EMA, RSI, Bollinger Bands, and G-Channel for robust signal generation.

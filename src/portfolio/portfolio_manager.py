@@ -30,7 +30,9 @@ class PortfolioManager:
             self.logger.warning("Attempted to buy while position exists")
             return
             
-        cost = price * size
+        # Adjust position size based on specific strategy requirements
+        adjusted_size = self.calculate_adjusted_size(size)
+        cost = price * adjusted_size
         if cost > self.balance:
             self.logger.warning(
                 f"Insufficient funds for trade: {cost} > {self.balance}"
@@ -40,7 +42,7 @@ class PortfolioManager:
         self.balance -= cost
         self.current_position = Position(
             entry_price=price,
-            size=size,
+            size=adjusted_size,
             timestamp=str(datetime.now())
         )
         
@@ -80,6 +82,11 @@ class PortfolioManager:
         
         drawdown = (self.peak_value - total_value) / self.peak_value * 100
         self.max_drawdown = max(self.max_drawdown, drawdown)
+
+    def calculate_adjusted_size(self, size: float) -> float:
+        # Implement specific logic to adjust position size based on strategy
+        # For example, adjust size based on volatility or other factors
+        return size  # Placeholder for actual logic
 
     def get_total_value(self, current_price: float) -> float:
         position_value = (

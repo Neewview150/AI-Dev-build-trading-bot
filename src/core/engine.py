@@ -1,7 +1,7 @@
 import time
 from datetime import datetime
 from typing import Dict, Optional
-from ..strategies.combined_strategy import CombinedStrategy
+from propfirm import PropFirmStrategy
 from ..risk_management.position_sizer import PositionSizer
 from ..utils.logger import get_logger
 from ..market_data.price_feed import PriceFeed
@@ -16,7 +16,7 @@ class TradingEngine:
             initial_balance=config.get('initial_balance', 10000),
             risk_percentage=config.get('risk_percentage', 1.0)
         )
-        self.strategy = CombinedStrategy(config)
+        self.strategy = PropFirmStrategy(config)
         self.position_sizer = PositionSizer(config)
         self.running = False
         self.last_update = None
@@ -32,21 +32,24 @@ class TradingEngine:
                 )
                 
                 if signals.should_trade:
-                    position_size = self.position_sizer.calculate_position_size(
-                        self.portfolio.get_balance(),
-                        current_price,
-                        signals.risk_score
-                    )
-                    
-                    if signals.action == 'buy' and not self.portfolio.has_position:
-                        self.portfolio.execute_buy(current_price, position_size)
-                    elif signals.action == 'sell' and self.portfolio.has_position:
-                        self.portfolio.execute_sell(current_price)
+                    self.execute_trades(signals, current_price)
             
             self._log_status(current_price)
             
         except Exception as e:
             self.logger.error(f"Error in trading update: {e}", exc_info=True)
+
+    def execute_trades(self, signals, current_price):
+        position_size = self.position_sizer.calculate_position_size(
+            self.portfolio.get_balance(),
+            current_price,
+            signals.risk_score
+        )
+        
+        if signals.action == 'buy' and not self.portfolio.has_position:
+            self.portfolio.execute_buy(current_price, position_size)
+        elif signals.action == 'sell' and self.portfolio.has_position:
+            self.portfolio.execute_sell(current_price)
 
     def _should_update_signals(self) -> bool:
         now = datetime.now()
